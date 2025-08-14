@@ -436,6 +436,8 @@ const defaultQuotes = [
 // Global quotes array - will be loaded from localStorage or defaultQuotes
 let quotes = [];
 let currentQuoteIndex = -1;
+let currentFilter = 'all';
+let filteredQuotes = [];
 
 // Web Storage Functions
 function loadQuotes() {
@@ -493,6 +495,24 @@ function getLastViewedQuote() {
     return null;
 }
 
+// Filter preference storage functions
+function saveFilterPreference(filter) {
+    try {
+        localStorage.setItem('dynamicQuoteGenerator_filter', filter);
+    } catch (error) {
+        console.error('Error saving filter preference:', error);
+    }
+}
+
+function getFilterPreference() {
+    try {
+        return localStorage.getItem('dynamicQuoteGenerator_filter') || 'all';
+    } catch (error) {
+        console.error('Error loading filter preference:', error);
+        return 'all';
+    }
+}
+
 // Update storage information display
 function updateStorageInfo() {
     const storageStatusEl = document.getElementById('storageStatus');
@@ -518,24 +538,91 @@ function updateStorageInfo() {
     }
 }
 
-// Function to display a random quote and update the DOM
-function showRandomQuote() {
-    if (quotes.length === 0) {
-        showNotification('No quotes available!', 'error');
+// Function to populate categories in the dropdown
+function populateCategories() {
+    const categoryFilter = document.getElementById('categoryFilter');
+    if (!categoryFilter) return;
+    
+    // Get unique categories from quotes
+    const uniqueCategories = [...new Set(quotes.map(quote => quote.category))].sort();
+    
+    // Clear existing options except "All Categories"
+    categoryFilter.innerHTML = '<option value="all">All Categories</option>';
+    
+    // Add category options
+    uniqueCategories.forEach(category => {
+        const option = document.createElement('option');
+        option.value = category.toLowerCase();
+        option.textContent = category;
+        categoryFilter.appendChild(option);
+    });
+    
+    // Restore saved filter preference
+    const savedFilter = getFilterPreference();
+    categoryFilter.value = savedFilter;
+    currentFilter = savedFilter;
+    
+    console.log(`Populated ${uniqueCategories.length} categories in filter dropdown`);
+}
+
+// Function to filter quotes based on selected category
+function filterQuotes() {
+    const categoryFilter = document.getElementById('categoryFilter');
+    if (!categoryFilter) return;
+    
+    const selectedCategory = categoryFilter.value;
+    currentFilter = selectedCategory;
+    
+    // Save filter preference
+    saveFilterPreference(selectedCategory);
+    
+    // Filter quotes based on selection
+    if (selectedCategory === 'all') {
+        filteredQuotes = [...quotes];
+    } else {
+        filteredQuotes = quotes.filter(quote =>
+            quote.category.toLowerCase() === selectedCategory
+        );
+    }
+    
+    // Update filtered count display
+    const filteredCountEl = document.getElementById('filteredCount');
+    if (filteredCountEl) {
+        filteredCountEl.textContent = filteredQuotes.length;
+    }
+    
+    // Update quote display
+    if (filteredQuotes.length > 0) {
+        // Reset current index and show a random quote from filtered results
+        currentQuoteIndex = -1;
+        showRandomQuoteFromFiltered();
+    } else {
+        // Show no quotes message
+        displayNoQuotesMessage(selectedCategory);
+    }
+    
+    console.log(`Filtered to ${filteredQuotes.length} quotes for category: ${selectedCategory}`);
+}
+
+// Function to display a random quote from filtered results
+function showRandomQuoteFromFiltered() {
+    if (filteredQuotes.length === 0) {
+        displayNoQuotesMessage(currentFilter);
         return;
     }
     
-    // Get random quote that's different from current one
+    // Get random quote from filtered results
     let randomIndex;
     do {
-        randomIndex = Math.floor(Math.random() * quotes.length);
-    } while (randomIndex === currentQuoteIndex && quotes.length > 1);
+        randomIndex = Math.floor(Math.random() * filteredQuotes.length);
+    } while (randomIndex === currentQuoteIndex && filteredQuotes.length > 1);
     
     currentQuoteIndex = randomIndex;
-    const quote = quotes[randomIndex];
+    const quote = filteredQuotes[randomIndex];
     
-    // Save to session storage
-    saveLastViewedQuote(currentQuoteIndex);
+    // Find original index for session storage
+    const originalIndex = quotes.findIndex(q => q.text === quote.text && q.category === quote.category);
+    saveLastViewedQuote(originalIndex);
     
     // Get quote display element
     const quoteDisplay = document.getElementById('quoteDisplay');
@@ -546,6 +633,9 @@ function showRandomQuote() {
     // Create quote container with animation
     const quoteContainer = document.createElement('div');
     quoteContainer.className = 'quote-container';
+    if (currentFilter !== 'all') {
+        quoteContainer.classList.add('filtered-quote-display');
+    }
     quoteContainer.style.opacity = '0';
     quoteContainer.style.transform = 'translateY(20px)';
     quoteContainer.style.transition = 'all 0.5s ease-in-out';
@@ -565,7 +655,12 @@ function showRandomQuote() {
     quoteNumber.style.fontSize = '0.8em';
     quoteNumber.style.color = '#888';
     quoteNumber.style.marginTop = '10px';
-    quoteNumber.textContent = `Quote ${currentQuoteIndex + 1} of ${quotes.length}`;
+    
+    if (currentFilter === 'all') {
+        quoteNumber.textContent = `Quote ${currentQuoteIndex + 1} of ${filteredQuotes.length}`;
+    } else {
+        quoteNumber.textContent = `Quote ${currentQuoteIndex + 1} of ${filteredQuotes.length} (${quote.category} category)`;
+    }
     
     // Append elements to container
     quoteContainer.appendChild(quoteText);
@@ -583,6 +678,33 @@ function showRandomQuote() {
     
     // Update storage info
     updateStorageInfo();
+}
+
+// Function to display no quotes message
+function displayNoQuotesMessage(category) {
+    const quoteDisplay = document.getElementById('quoteDisplay');
+    quoteDisplay.innerHTML = '';
+    
+    const messageContainer = document.createElement('div');
+    messageContainer.className = 'no-quotes-message';
+    messageContainer.innerHTML = `
+        <h3>No quotes found</h3>
+        <p>There are no quotes in the "${category}" category.</p>
+        <p>Try selecting a different category or add some quotes to this category.</p>
+    `;
+    
+    quoteDisplay.appendChild(messageContainer);
+}
+
+// Function to display a random quote and update the DOM (updated for filtering)
+function showRandomQuote() {
+    if (quotes.length === 0) {
+        showNotification('No quotes available!', 'error');
+        return;
+    }
+    
+    // Use filtered quotes if a filter is active
+    showRandomQuoteFromFiltered();
 }
 
 // Alias function for displayRandomQuote (same functionality)
@@ -757,6 +879,12 @@ function addQuote() {
     // Save to localStorage
     saveQuotes();
     
+    // Update categories dropdown (in case new category was added)
+    populateCategories();
+    
+    // Update filtered quotes if necessary
+    filterQuotes();
+    
     // Show success notification
     showNotification(`Quote added successfully! Total quotes: ${quotes.length}`, 'success');
     
@@ -770,8 +898,7 @@ function addQuote() {
     // Reset button text
     document.getElementById('toggleForm').textContent = 'Add New Quote';
     
-    // Show the new quote
-    currentQuoteIndex = quotes.length - 1;
+    // Show the new quote (will respect current filter)
     showRandomQuote();
 }
 
@@ -1007,6 +1134,16 @@ document.addEventListener('DOMContentLoaded', () => {
     if (clearStorageBtn) {
         clearStorageBtn.addEventListener('click', clearAllData);
     }
+    
+    // Add event listener for category filter
+    const categoryFilter = document.getElementById('categoryFilter');
+    if (categoryFilter) {
+        categoryFilter.addEventListener('change', filterQuotes);
+    }
+    
+    // Initialize filtering system
+    populateCategories();
+    filterQuotes();
     
     // Display initial quote
     showRandomQuote();

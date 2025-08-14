@@ -139,12 +139,83 @@
             font-size: 0.9em;
             color: #495057;
         }
+        
+        .filter-container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .filter-container h3 {
+            margin-top: 0;
+            color: #333;
+            margin-bottom: 15px;
+        }
+        
+        select {
+            padding: 10px 15px;
+            border: 2px solid #007bff;
+            border-radius: 5px;
+            font-size: 16px;
+            background-color: white;
+            color: #333;
+            cursor: pointer;
+            min-width: 200px;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+        
+        select:focus {
+            outline: none;
+            border-color: #0056b3;
+            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
+        }
+        
+        select:hover {
+            border-color: #0056b3;
+        }
+        
+        .filter-info {
+            margin-top: 10px;
+            font-size: 0.9em;
+            color: #666;
+            font-weight: bold;
+        }
+        
+        .filtered-quote-display {
+            border-left: 4px solid #007bff;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        }
+        
+        .no-quotes-message {
+            text-align: center;
+            padding: 40px 20px;
+            color: #666;
+            font-style: italic;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border: 2px dashed #dee2e6;
+        }
     </style>
 </head>
 <body>
     <h1>Dynamic Quote Generator</h1>
     <div id="quoteDisplay">
         <p>Click "Show New Quote" to display a random quote!</p>
+    </div>
+    
+    <!-- Category Filter Section -->
+    <div class="filter-container">
+        <h3>Filter by Category</h3>
+        <select id="categoryFilter">
+            <option value="all">All Categories</option>
+            <!-- Dynamically populated categories -->
+        </select>
+        <div class="filter-info">
+            <span id="filteredCount">0</span> quotes shown
+        </div>
     </div>
     
     <div class="button-container">
