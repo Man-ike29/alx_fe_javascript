@@ -419,18 +419,364 @@ class QuoteGenerator {
     }
 }
 
+// Global quotes array with objects containing text and category properties
+const quotes = [
+    { text: "The only way to do great work is to love what you do.", category: "Motivation" },
+    { text: "Innovation distinguishes between a leader and a follower.", category: "Innovation" },
+    { text: "Life is what happens to you while you're busy making other plans.", category: "Life" },
+    { text: "The future belongs to those who believe in the beauty of their dreams.", category: "Dreams" },
+    { text: "It is during our darkest moments that we must focus to see the light.", category: "Inspiration" },
+    { text: "Success is not final, failure is not fatal: it is the courage to continue that counts.", category: "Success" },
+    { text: "The only impossible journey is the one you never begin.", category: "Journey" },
+    { text: "In the middle of difficulty lies opportunity.", category: "Opportunity" },
+    { text: "Believe you can and you're halfway there.", category: "Belief" },
+    { text: "The best time to plant a tree was 20 years ago. The second best time is now.", category: "Action" }
+];
+
+let currentQuoteIndex = -1;
+
+// Function to display a random quote and update the DOM
+function showRandomQuote() {
+    // Get random quote that's different from current one
+    let randomIndex;
+    do {
+        randomIndex = Math.floor(Math.random() * quotes.length);
+    } while (randomIndex === currentQuoteIndex && quotes.length > 1);
+    
+    currentQuoteIndex = randomIndex;
+    const quote = quotes[randomIndex];
+    
+    // Get quote display element
+    const quoteDisplay = document.getElementById('quoteDisplay');
+    
+    // Clear existing content
+    quoteDisplay.innerHTML = '';
+    
+    // Create quote container with animation
+    const quoteContainer = document.createElement('div');
+    quoteContainer.className = 'quote-container';
+    quoteContainer.style.opacity = '0';
+    quoteContainer.style.transform = 'translateY(20px)';
+    quoteContainer.style.transition = 'all 0.5s ease-in-out';
+    
+    // Create quote text element
+    const quoteText = document.createElement('div');
+    quoteText.className = 'quote-text';
+    quoteText.textContent = `"${quote.text}"`;
+    
+    // Create quote category element
+    const quoteCategory = document.createElement('div');
+    quoteCategory.className = 'quote-category';
+    quoteCategory.textContent = `Category: ${quote.category}`;
+    
+    // Create quote number indicator
+    const quoteNumber = document.createElement('div');
+    quoteNumber.style.fontSize = '0.8em';
+    quoteNumber.style.color = '#888';
+    quoteNumber.style.marginTop = '10px';
+    quoteNumber.textContent = `Quote ${currentQuoteIndex + 1} of ${quotes.length}`;
+    
+    // Append elements to container
+    quoteContainer.appendChild(quoteText);
+    quoteContainer.appendChild(quoteCategory);
+    quoteContainer.appendChild(quoteNumber);
+    
+    // Add container to display area
+    quoteDisplay.appendChild(quoteContainer);
+    
+    // Animate in
+    setTimeout(() => {
+        quoteContainer.style.opacity = '1';
+        quoteContainer.style.transform = 'translateY(0)';
+    }, 50);
+}
+
+// Alias function for displayRandomQuote (same functionality)
+function displayRandomQuote() {
+    showRandomQuote();
+}
+
+// Function to create and display the add quote form
+function createAddQuoteForm() {
+    const addQuoteContainer = document.getElementById('addQuoteContainer');
+    
+    // Remove existing form if present
+    const existingForm = document.getElementById('quoteForm');
+    if (existingForm) {
+        addQuoteContainer.removeChild(existingForm);
+    }
+    
+    // Create form container
+    const formContainer = document.createElement('div');
+    formContainer.className = 'form-container';
+    formContainer.id = 'quoteForm';
+    
+    // Create form title
+    const formTitle = document.createElement('h3');
+    formTitle.textContent = 'Add Your Own Quote';
+    formTitle.style.marginTop = '0';
+    formTitle.style.color = '#333';
+    
+    // Create quote text input
+    const quoteInput = document.createElement('input');
+    quoteInput.type = 'text';
+    quoteInput.id = 'newQuoteText';
+    quoteInput.placeholder = 'Enter a new quote';
+    quoteInput.maxLength = 200;
+    
+    // Create category input with datalist for suggestions
+    const categoryInput = document.createElement('input');
+    categoryInput.type = 'text';
+    categoryInput.id = 'newQuoteCategory';
+    categoryInput.placeholder = 'Enter quote category';
+    categoryInput.setAttribute('list', 'categories');
+    
+    // Create datalist for category suggestions
+    const datalist = document.createElement('datalist');
+    datalist.id = 'categories';
+    
+    // Get unique categories from existing quotes
+    const uniqueCategories = [...new Set(quotes.map(quote => quote.category))];
+    uniqueCategories.forEach(category => {
+        const option = document.createElement('option');
+        option.value = category;
+        datalist.appendChild(option);
+    });
+    
+    // Create character counter for quote input
+    const charCounter = document.createElement('div');
+    charCounter.style.fontSize = '0.8em';
+    charCounter.style.color = '#666';
+    charCounter.style.textAlign = 'right';
+    charCounter.textContent = '0/200 characters';
+    
+    // Create button container
+    const buttonContainer = document.createElement('div');
+    buttonContainer.style.textAlign = 'center';
+    buttonContainer.style.marginTop = '15px';
+    
+    // Create add quote button
+    const addBtn = document.createElement('button');
+    addBtn.textContent = 'Add Quote';
+    addBtn.type = 'button';
+    addBtn.onclick = addQuote;
+    
+    // Create cancel button
+    const cancelBtn = document.createElement('button');
+    cancelBtn.textContent = 'Cancel';
+    cancelBtn.type = 'button';
+    cancelBtn.style.backgroundColor = '#6c757d';
+    cancelBtn.onclick = () => {
+        addQuoteContainer.removeChild(formContainer);
+        document.getElementById('toggleForm').textContent = 'Add New Quote';
+    };
+    
+    // Add event listeners for validation
+    quoteInput.addEventListener('input', (e) => {
+        const length = e.target.value.length;
+        charCounter.textContent = `${length}/200 characters`;
+        charCounter.style.color = length > 180 ? '#dc3545' : '#666';
+        validateForm();
+    });
+    
+    categoryInput.addEventListener('input', validateForm);
+    
+    // Validation function
+    function validateForm() {
+        const quoteText = quoteInput.value.trim();
+        const category = categoryInput.value.trim();
+        addBtn.disabled = !quoteText || !category;
+        addBtn.style.opacity = addBtn.disabled ? '0.5' : '1';
+    }
+    
+    // Assemble form
+    buttonContainer.appendChild(addBtn);
+    buttonContainer.appendChild(cancelBtn);
+    
+    formContainer.appendChild(formTitle);
+    formContainer.appendChild(quoteInput);
+    formContainer.appendChild(charCounter);
+    formContainer.appendChild(categoryInput);
+    formContainer.appendChild(datalist);
+    formContainer.appendChild(buttonContainer);
+    
+    // Add form to container with animation
+    formContainer.style.opacity = '0';
+    formContainer.style.transform = 'translateY(-20px)';
+    formContainer.style.transition = 'all 0.3s ease-in-out';
+    
+    addQuoteContainer.appendChild(formContainer);
+    
+    setTimeout(() => {
+        formContainer.style.opacity = '1';
+        formContainer.style.transform = 'translateY(0)';
+    }, 50);
+    
+    // Initial validation
+    validateForm();
+    
+    // Focus on first input
+    setTimeout(() => {
+        quoteInput.focus();
+    }, 300);
+    
+    // Update button text
+    document.getElementById('toggleForm').textContent = 'Cancel';
+}
+
+// Function to add a new quote to the quotes array and update the DOM
+function addQuote() {
+    const quoteText = document.getElementById('newQuoteText').value.trim();
+    const category = document.getElementById('newQuoteCategory').value.trim();
+    
+    // Validation
+    if (!quoteText || !category) {
+        showNotification('Please fill in both fields!', 'error');
+        return;
+    }
+    
+    if (quoteText.length > 200) {
+        showNotification('Quote is too long! Maximum 200 characters.', 'error');
+        return;
+    }
+    
+    // Check for duplicate quotes
+    const isDuplicate = quotes.some(quote =>
+        quote.text.toLowerCase() === quoteText.toLowerCase()
+    );
+    
+    if (isDuplicate) {
+        showNotification('This quote already exists!', 'error');
+        return;
+    }
+    
+    // Add quote to array
+    const newQuote = {
+        text: quoteText,
+        category: category
+    };
+    
+    quotes.push(newQuote);
+    
+    // Show success notification
+    showNotification(`Quote added successfully! Total quotes: ${quotes.length}`, 'success');
+    
+    // Remove form
+    const addQuoteContainer = document.getElementById('addQuoteContainer');
+    const form = document.getElementById('quoteForm');
+    if (form) {
+        addQuoteContainer.removeChild(form);
+    }
+    
+    // Reset button text
+    document.getElementById('toggleForm').textContent = 'Add New Quote';
+    
+    // Show the new quote
+    currentQuoteIndex = quotes.length - 1;
+    showRandomQuote();
+}
+
+// Function to show notification messages
+function showNotification(message, type = 'info') {
+    // Remove existing notification
+    const existingNotification = document.querySelector('.notification');
+    if (existingNotification) {
+        existingNotification.remove();
+    }
+    
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.className = 'notification';
+    notification.textContent = message;
+    
+    // Style notification
+    notification.style.position = 'fixed';
+    notification.style.top = '20px';
+    notification.style.right = '20px';
+    notification.style.padding = '15px 20px';
+    notification.style.borderRadius = '5px';
+    notification.style.color = 'white';
+    notification.style.fontWeight = 'bold';
+    notification.style.zIndex = '1000';
+    notification.style.opacity = '0';
+    notification.style.transform = 'translateX(100%)';
+    notification.style.transition = 'all 0.3s ease-in-out';
+    
+    // Set color based on type
+    switch (type) {
+        case 'success':
+            notification.style.backgroundColor = '#28a745';
+            break;
+        case 'error':
+            notification.style.backgroundColor = '#dc3545';
+            break;
+        default:
+            notification.style.backgroundColor = '#007bff';
+    }
+    
+    // Add to page
+    document.body.appendChild(notification);
+    
+    // Animate in
+    setTimeout(() => {
+        notification.style.opacity = '1';
+        notification.style.transform = 'translateX(0)';
+    }, 50);
+    
+    // Remove after 3 seconds
+    setTimeout(() => {
+        notification.style.opacity = '0';
+        notification.style.transform = 'translateX(100%)';
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.parentNode.removeChild(notification);
+            }
+        }, 300);
+    }, 3000);
+}
+
 // Initialize the application when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
+    // Initialize with class-based approach for advanced features
     window.quoteGenerator = new QuoteGenerator();
+    
+    // Add event listener to "Show New Quote" button
+    const newQuoteBtn = document.getElementById('newQuote');
+    if (newQuoteBtn) {
+        newQuoteBtn.addEventListener('click', showRandomQuote);
+    }
+    
+    // Add event listener to "Add New Quote" button
+    const toggleFormBtn = document.getElementById('toggleForm');
+    if (toggleFormBtn) {
+        toggleFormBtn.addEventListener('click', () => {
+            const form = document.getElementById('quoteForm');
+            if (form) {
+                // Form is visible, hide it
+                const addQuoteContainer = document.getElementById('addQuoteContainer');
+                addQuoteContainer.removeChild(form);
+                toggleFormBtn.textContent = 'Add New Quote';
+            } else {
+                // Form is not visible, show it
+                createAddQuoteForm();
+            }
+        });
+    }
+    
+    // Display initial quote
+    showRandomQuote();
     
     // Add keyboard shortcuts
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' && e.ctrlKey) {
-            window.quoteGenerator.showRandomQuote();
+            showRandomQuote();
         }
         if (e.key === 'Escape') {
-            if (window.quoteGenerator.formVisible) {
-                window.quoteGenerator.toggleAddQuoteForm();
+            const form = document.getElementById('quoteForm');
+            if (form) {
+                const addQuoteContainer = document.getElementById('addQuoteContainer');
+                addQuoteContainer.removeChild(form);
+                document.getElementById('toggleForm').textContent = 'Add New Quote';
             }
         }
     });
