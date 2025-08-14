@@ -617,7 +617,9 @@ function createAddQuoteForm() {
     
     // Focus on first input
     setTimeout(() => {
-        quoteInput.focus();
+        if (quoteInput) {
+            quoteInput.focus();
+        }
     }, 300);
     
     // Update button text
