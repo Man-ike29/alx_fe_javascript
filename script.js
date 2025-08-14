@@ -439,6 +439,13 @@ let currentQuoteIndex = -1;
 let currentFilter = 'all';
 let filteredQuotes = [];
 
+// Server synchronization variables
+let serverQuotes = [];
+let conflicts = [];
+let autoSyncEnabled = false;
+let autoSyncInterval = null;
+let lastSyncTime = null;
+
 // Web Storage Functions
 function loadQuotes() {
     try {
@@ -1067,14 +1074,344 @@ function clearAllData() {
         try {
             localStorage.removeItem('dynamicQuoteGenerator_quotes');
             sessionStorage.removeItem('dynamicQuoteGenerator_lastQuote');
+            localStorage.removeItem('dynamicQuoteGenerator_filter');
+            localStorage.removeItem('dynamicQuoteGenerator_autoSync');
+            localStorage.removeItem('dynamicQuoteGenerator_lastSync');
             quotes = [...defaultQuotes];
             saveQuotes();
             showNotification('All data cleared! Reset to default quotes.', 'success');
             showRandomQuote();
+            updateSyncStatus();
         } catch (error) {
             console.error('Error clearing data:', error);
             showNotification('Error clearing data!', 'error');
         }
+    }
+}
+
+// Server Simulation and Synchronization Functions
+
+// Simulate server API using JSONPlaceholder-like structure
+const SERVER_API = {
+    baseUrl: 'https://jsonplaceholder.typicode.com',
+    
+    // Simulate fetching quotes from server (using posts as quote analogy)
+    async fetchQuotes() {
+        try {
+            const response = await fetch(`${this.baseUrl}/posts?_limit=5`);
+            const posts = await response.json();
+            
+            // Transform posts into quote format
+            return posts.map(post => ({
+                id: post.id,
+                text: post.title.charAt(0).toUpperCase() + post.title.slice(1) + '.',
+                category: this.getRandomCategory(),
+                source: 'server',
+                timestamp: new Date().toISOString()
+            }));
+        } catch (error) {
+            console.error('Error fetching from server:', error);
+            throw new Error('Failed to connect to server');
+        }
+    },
+    
+    // Simulate posting quotes to server
+    async postQuote(quote) {
+        try {
+            const response = await fetch(`${this.baseUrl}/posts`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    title: quote.text,
+                    body: `Category: ${quote.category}`,
+                    userId: 1
+                })
+            });
+            
+            if (!response.ok) {
+                throw new Error('Failed to post to server');
+            }
+            
+            const result = await response.json();
+            return {
+                ...quote,
+                id: result.id,
+                source: 'server',
+                timestamp: new Date().toISOString()
+            };
+        } catch (error) {
+            console.error('Error posting to server:', error);
+            throw new Error('Failed to sync with server');
+        }
+    },
+    
+    getRandomCategory() {
+        const categories = ['Motivation', 'Inspiration', 'Success', 'Life', 'Wisdom', 'Innovation'];
+        return categories[Math.floor(Math.random() * categories.length)];
+    }
+};
+
+// Sync status management
+function updateSyncStatus() {
+    const syncStatusEl = document.getElementById('syncStatus');
+    const lastSyncEl = document.getElementById('lastSync');
+    const serverQuoteCountEl = document.getElementById('serverQuoteCount');
+    const conflictCountEl = document.getElementById('conflictCount');
+    
+    if (syncStatusEl) {
+        syncStatusEl.textContent = autoSyncEnabled ? 'Auto-sync enabled' : 'Manual sync';
+        syncStatusEl.style.color = autoSyncEnabled ? '#28a745' : '#6c757d';
+    }
+    
+    if (lastSyncEl) {
+        lastSyncEl.textContent = lastSyncTime ?
+            new Date(lastSyncTime).toLocaleString() : 'Never';
+    }
+    
+    if (serverQuoteCountEl) {
+        serverQuoteCountEl.textContent = serverQuotes.length;
+    }
+    
+    if (conflictCountEl) {
+        conflictCountEl.textContent = conflicts.length;
+        conflictCountEl.style.color = conflicts.length > 0 ? '#dc3545' : '#28a745';
+    }
+    
+    // Show/hide conflict resolution button
+    const resolveBtn = document.getElementById('resolveConflictsBtn');
+    if (resolveBtn) {
+        resolveBtn.style.display = conflicts.length > 0 ? 'inline-block' : 'none';
+    }
+}
+
+// Show sync notification
+function showSyncNotification(message, type = 'info') {
+    // Remove existing sync notification
+    const existingNotification = document.querySelector('.sync-notification');
+    if (existingNotification) {
+        existingNotification.remove();
+    }
+    
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.className = `sync-notification ${type}`;
+    notification.textContent = message;
+    
+    // Add to page
+    document.body.appendChild(notification);
+    
+    // Show notification
+    setTimeout(() => {
+        notification.classList.add('show');
+    }, 50);
+    
+    // Remove after 4 seconds
+    setTimeout(() => {
+        notification.classList.remove('show');
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.parentNode.removeChild(notification);
+            }
+        }, 300);
+    }, 4000);
+}
+
+// Detect conflicts between local and server data
+function detectConflicts(localQuotes, serverQuotes) {
+    const conflicts = [];
+    
+    serverQuotes.forEach(serverQuote => {
+        const localMatch = localQuotes.find(localQuote =>
+            localQuote.text.toLowerCase().trim() === serverQuote.text.toLowerCase().trim()
+        );
+        
+        if (localMatch) {
+            // Check if there are differences
+            if (localMatch.category !== serverQuote.category) {
+                conflicts.push({
+                    type: 'category_mismatch',
+                    local: localMatch,
+                    server: serverQuote,
+                    description: `Quote "${serverQuote.text.substring(0, 50)}..." has different categories`
+                });
+            }
+        }
+    });
+    
+    return conflicts;
+}
+
+// Sync with server
+async function syncWithServer() {
+    try {
+        showSyncNotification('Syncing with server...', 'info');
+        
+        // Fetch server quotes
+        serverQuotes = await SERVER_API.fetchQuotes();
+        
+        // Detect conflicts
+        conflicts = detectConflicts(quotes, serverQuotes);
+        
+        if (conflicts.length > 0) {
+            showSyncNotification(`Sync completed with ${conflicts.length} conflicts detected`, 'warning');
+        } else {
+            // No conflicts - merge server quotes
+            const newQuotes = serverQuotes.filter(serverQuote =>
+                !quotes.some(localQuote =>
+                    localQuote.text.toLowerCase().trim() === serverQuote.text.toLowerCase().trim()
+                )
+            );
+            
+            if (newQuotes.length > 0) {
+                quotes.push(...newQuotes);
+                saveQuotes();
+                populateCategories();
+                filterQuotes();
+                showSyncNotification(`Sync completed! Added ${newQuotes.length} new quotes from server`, 'success');
+            } else {
+                showSyncNotification('Sync completed! No new quotes from server', 'success');
+            }
+        }
+        
+        lastSyncTime = new Date().toISOString();
+        localStorage.setItem('dynamicQuoteGenerator_lastSync', lastSyncTime);
+        updateSyncStatus();
+        
+    } catch (error) {
+        console.error('Sync error:', error);
+        showSyncNotification('Sync failed: ' + error.message, 'error');
+    }
+}
+
+// Toggle auto-sync
+function toggleAutoSync() {
+    autoSyncEnabled = !autoSyncEnabled;
+    localStorage.setItem('dynamicQuoteGenerator_autoSync', autoSyncEnabled.toString());
+    
+    const toggleBtn = document.getElementById('toggleAutoSync');
+    if (toggleBtn) {
+        toggleBtn.textContent = autoSyncEnabled ? 'Disable Auto-Sync' : 'Enable Auto-Sync';
+        toggleBtn.classList.toggle('active', autoSyncEnabled);
+    }
+    
+    if (autoSyncEnabled) {
+        // Start auto-sync every 30 seconds
+        autoSyncInterval = setInterval(syncWithServer, 30000);
+        showSyncNotification('Auto-sync enabled (every 30 seconds)', 'success');
+    } else {
+        // Stop auto-sync
+        if (autoSyncInterval) {
+            clearInterval(autoSyncInterval);
+            autoSyncInterval = null;
+        }
+        showSyncNotification('Auto-sync disabled', 'info');
+    }
+    
+    updateSyncStatus();
+}
+
+// Resolve conflicts
+function resolveConflicts() {
+    if (conflicts.length === 0) {
+        showSyncNotification('No conflicts to resolve', 'info');
+        return;
+    }
+    
+    const conflictResolution = document.getElementById('conflictResolution');
+    const conflictList = document.getElementById('conflictList');
+    
+    if (!conflictResolution || !conflictList) return;
+    
+    conflictList.innerHTML = '';
+    
+    conflicts.forEach((conflict, index) => {
+        const conflictItem = document.createElement('div');
+        conflictItem.className = 'conflict-item';
+        
+        conflictItem.innerHTML = `
+            <strong>Conflict ${index + 1}:</strong> ${conflict.description}
+            <div class="quote-preview">Local: "${conflict.local.text}" (${conflict.local.category})</div>
+            <div class="quote-preview">Server: "${conflict.server.text}" (${conflict.server.category})</div>
+            <div class="conflict-actions">
+                <button onclick="resolveConflict(${index}, 'local')" style="background-color: #007bff;">Keep Local</button>
+                <button onclick="resolveConflict(${index}, 'server')" style="background-color: #28a745;">Use Server</button>
+                <button onclick="resolveConflict(${index}, 'merge')" style="background-color: #17a2b8;">Create Both</button>
+            </div>
+        `;
+        
+        conflictList.appendChild(conflictItem);
+    });
+    
+    conflictResolution.style.display = 'block';
+}
+
+// Resolve individual conflict
+function resolveConflict(conflictIndex, resolution) {
+    if (conflictIndex >= conflicts.length) return;
+    
+    const conflict = conflicts[conflictIndex];
+    
+    switch (resolution) {
+        case 'local':
+            // Keep local version, ignore server version
+            break;
+            
+        case 'server':
+            // Update local version with server data
+            const localIndex = quotes.findIndex(q => q.text.toLowerCase().trim() === conflict.local.text.toLowerCase().trim());
+            if (localIndex !== -1) {
+                quotes[localIndex] = { ...conflict.server, source: 'server' };
+            }
+            break;
+            
+        case 'merge':
+            // Keep both versions
+            quotes.push({ ...conflict.server, source: 'server' });
+            break;
+    }
+    
+    // Remove resolved conflict
+    conflicts.splice(conflictIndex, 1);
+    
+    // Update UI
+    if (conflicts.length === 0) {
+        document.getElementById('conflictResolution').style.display = 'none';
+        showSyncNotification('All conflicts resolved!', 'success');
+    } else {
+        resolveConflicts(); // Refresh conflict list
+    }
+    
+    // Save changes and update UI
+    saveQuotes();
+    populateCategories();
+    filterQuotes();
+    updateSyncStatus();
+}
+
+// Load sync preferences
+function loadSyncPreferences() {
+    try {
+        const savedAutoSync = localStorage.getItem('dynamicQuoteGenerator_autoSync');
+        autoSyncEnabled = savedAutoSync === 'true';
+        
+        const savedLastSync = localStorage.getItem('dynamicQuoteGenerator_lastSync');
+        lastSyncTime = savedLastSync;
+        
+        const toggleBtn = document.getElementById('toggleAutoSync');
+        if (toggleBtn) {
+            toggleBtn.textContent = autoSyncEnabled ? 'Disable Auto-Sync' : 'Enable Auto-Sync';
+            toggleBtn.classList.toggle('active', autoSyncEnabled);
+        }
+        
+        if (autoSyncEnabled) {
+            autoSyncInterval = setInterval(syncWithServer, 30000);
+        }
+        
+        updateSyncStatus();
+    } catch (error) {
+        console.error('Error loading sync preferences:', error);
     }
 }
 
@@ -1163,8 +1500,27 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
     
-    console.log('Dynamic Quote Generator with Web Storage initialized!');
-    console.log('Features: Local Storage, Session Storage, JSON Import/Export');
+    // Add event listeners for server sync functionality
+    const syncBtn = document.getElementById('syncBtn');
+    if (syncBtn) {
+        syncBtn.addEventListener('click', syncWithServer);
+    }
+    
+    const toggleAutoSyncBtn = document.getElementById('toggleAutoSync');
+    if (toggleAutoSyncBtn) {
+        toggleAutoSyncBtn.addEventListener('click', toggleAutoSync);
+    }
+    
+    const resolveConflictsBtn = document.getElementById('resolveConflictsBtn');
+    if (resolveConflictsBtn) {
+        resolveConflictsBtn.addEventListener('click', resolveConflicts);
+    }
+    
+    // Initialize sync system
+    loadSyncPreferences();
+    
+    console.log('Dynamic Quote Generator with Web Storage and Server Sync initialized!');
+    console.log('Features: Local Storage, Session Storage, JSON Import/Export, Server Synchronization');
     console.log('Keyboard shortcuts:');
     console.log('- Ctrl + Enter: Show new quote');
     console.log('- Escape: Close form');

@@ -1,6 +1,6 @@
-# Dynamic Quote Generator with Web Storage & Content Filtering
+# Dynamic Quote Generator with Server Synchronization & Conflict Resolution
 
-A comprehensive web application that demonstrates advanced DOM manipulation techniques, web storage mechanisms, JSON data handling, and dynamic content filtering using vanilla JavaScript. This project creates interactive elements dynamically without relying on frameworks while providing persistent data storage and intelligent content filtering.
+A comprehensive web application that demonstrates advanced DOM manipulation techniques, web storage mechanisms, JSON data handling, dynamic content filtering, and server synchronization using vanilla JavaScript. This project creates interactive elements dynamically without relying on frameworks while providing persistent data storage, intelligent content filtering, and real-time server synchronization with conflict resolution.
 
 ## Features
 
@@ -33,6 +33,16 @@ A comprehensive web application that demonstrates advanced DOM manipulation tech
 - **Batch Operations**: Support for importing multiple quotes at once
 - **Category Updates**: Automatically updates filter dropdown when new categories are imported
 
+### Server Synchronization & Conflict Resolution
+- **Server Simulation**: Uses JSONPlaceholder API to simulate server interactions
+- **Manual Sync**: On-demand synchronization with server data
+- **Auto-Sync**: Automatic periodic synchronization every 30 seconds
+- **Conflict Detection**: Intelligent detection of data conflicts between local and server data
+- **Conflict Resolution**: Multiple resolution strategies (keep local, use server, create both)
+- **Sync Status Display**: Real-time sync status, last sync time, and server quote count
+- **Sync Notifications**: Visual feedback for sync operations and conflict alerts
+- **Persistent Sync Preferences**: Auto-sync settings are remembered across sessions
+
 ### Advanced DOM Manipulation Techniques
 - **Dynamic Element Creation**: All interactive elements are created programmatically
 - **Event Handling**: Comprehensive event listeners for user interactions
@@ -53,6 +63,19 @@ A comprehensive web application that demonstrates advanced DOM manipulation tech
 - **JSON Handling**: Parsing and stringifying with error handling
 - **Input Validation**: Real-time form validation and feedback
 - **Animation API**: CSS transitions controlled via JavaScript
+- **Fetch API**: Asynchronous server communication for data synchronization
+- **Async/Await**: Modern asynchronous programming patterns
+- **Interval Management**: Automatic periodic sync with setInterval
+
+### Server Synchronization Implementation
+- **JSONPlaceholder Integration**: Uses JSONPlaceholder API as server simulation
+- **Data Transformation**: Converts server posts into quote format
+- **Conflict Detection Algorithm**: Compares local and server data for differences
+- **Resolution Strategies**: Multiple conflict resolution options (local, server, merge)
+- **Auto-sync Management**: Configurable automatic synchronization intervals
+- **Sync State Persistence**: Saves sync preferences and last sync time to localStorage
+- **Error Handling**: Comprehensive error handling for network operations
+- **UI Feedback**: Real-time sync status updates and notifications
 
 ### Web Storage Implementation
 - **localStorage**: Persistent storage using `dynamicQuoteGenerator_quotes` key
@@ -100,6 +123,13 @@ dom-manipulation/
 11. **Clear Data**: Click "Clear All Data" to reset to default quotes
 12. **View Storage**: Monitor storage status in the Data Management section
 
+### Server Synchronization
+13. **Manual Sync**: Click "Sync with Server" to fetch new quotes from the server
+14. **Auto-Sync**: Click "Enable Auto-Sync" to automatically sync every 30 seconds
+15. **Monitor Sync Status**: View sync status, last sync time, and server quote count
+16. **Resolve Conflicts**: When conflicts are detected, use the conflict resolution interface
+17. **Conflict Options**: Choose to keep local data, use server data, or create both versions
+
 ### Keyboard Shortcuts
 - `Ctrl + Enter`: Show new quote (respects current filter)
 - `Escape`: Close form
@@ -145,6 +175,44 @@ The filtering system uses advanced DOM manipulation and web storage to provide s
 - **Count Display**: Real-time update of filtered quote count
 - **No Results Handling**: Elegant message display when no quotes match the filter
 
+## Server Synchronization & Conflict Resolution System
+
+### Implementation Details
+The server synchronization system demonstrates advanced asynchronous programming and conflict resolution using the JSONPlaceholder API as a server simulation:
+
+#### Key Functions
+- **[`SERVER_API.fetchQuotes()`](script.js:1099)**: Fetches quotes from JSONPlaceholder API and transforms them into quote format
+- **[`SERVER_API.postQuote()`](script.js:1119)**: Simulates posting quotes to server
+- **[`syncWithServer()`](script.js:1247)**: Main synchronization function that fetches server data and detects conflicts
+- **[`detectConflicts()`](script.js:1222)**: Compares local and server data to identify conflicts
+- **[`resolveConflicts()`](script.js:1316)**: Provides UI for manual conflict resolution
+- **[`toggleAutoSync()`](script.js:1289)**: Manages automatic synchronization intervals
+- **[`loadSyncPreferences()`](script.js:1394)**: Loads sync settings from localStorage
+
+#### Server Simulation
+- **JSONPlaceholder Integration**: Uses `https://jsonplaceholder.typicode.com/posts` as data source
+- **Data Transformation**: Converts post titles into inspirational quotes with random categories
+- **Error Handling**: Comprehensive error handling for network failures and API issues
+- **Rate Limiting**: Respects API limitations with appropriate request intervals
+
+#### Conflict Resolution Strategies
+- **Local Precedence**: Keep local version, ignore server changes
+- **Server Precedence**: Update local data with server version
+- **Merge Strategy**: Create both versions as separate quotes
+- **User Choice**: Interactive UI for manual conflict resolution
+
+#### Auto-Sync Features
+- **Configurable Intervals**: Default 30-second sync intervals
+- **Persistent Settings**: Auto-sync preferences saved to localStorage
+- **Background Operation**: Non-blocking synchronization with visual feedback
+- **Error Recovery**: Graceful handling of network interruptions
+
+#### Sync Status Management
+- **Real-time Updates**: Live display of sync status, last sync time, and server quote count
+- **Visual Indicators**: Color-coded status indicators (green for enabled, red for conflicts)
+- **Notification System**: Toast notifications for sync events and conflicts
+- **Conflict Counter**: Real-time display of unresolved conflicts
+
 ## Learning Objectives
 
 This project demonstrates:
@@ -158,6 +226,12 @@ This project demonstrates:
 - Error handling and data validation
 - File operations in the browser environment
 - Advanced DOM querying and manipulation techniques
+- Asynchronous programming with Fetch API and async/await
+- Server communication and data synchronization
+- Conflict detection and resolution algorithms
+- Real-time UI updates and notification systems
+- Interval management for periodic operations
+- Network error handling and recovery strategies
 
 ## Browser Compatibility
 
@@ -178,3 +252,9 @@ This project demonstrates:
 - **Notification System**: User feedback for all actions
 - **Form Validation**: Comprehensive input validation
 - **Memory Management**: Efficient DOM element lifecycle management
+- **Server Synchronization**: Real-time data sync with external APIs
+- **Conflict Resolution**: Intelligent handling of data conflicts
+- **Auto-Sync Management**: Configurable automatic synchronization
+- **Network Error Recovery**: Graceful handling of connection issues
+- **Sync Status Monitoring**: Real-time sync status and statistics
+- **Persistent Sync Settings**: Sync preferences saved across sessions
