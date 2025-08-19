@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Step 2 Functions Test - Dynamic Quote Generator</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .test-section {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 30px;
+            margin: 20px auto;
+            max-width: 800px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+        .test-button {
+            padding: 15px 30px;
+            margin: 10px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        .test-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+        .function-info {
+            background: #f7fafc;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 0 8px 8px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>Step 2 Functions Test</h1>
+            <p class="subtitle">Testing the required showRandomQuote() and createAddQuoteForm() functions</p>
+        </header>
+
+        <div class="test-section">
+            <h2>Step 2: Advanced DOM Manipulation Functions</h2>
+            
+            <div class="function-info">
+                <h3>Function 1: showRandomQuote()</h3>
+                <p><strong>Purpose:</strong> Display a random quote from the quotes array using advanced DOM manipulation</p>
+                <p><strong>Features:</strong> Selects random quote from all categories, displays with animation, shows category info, updates statistics</p>
+                <button class="test-button" onclick="showRandomQuote()">Test showRandomQuote()</button>
+            </div>
+
+            <div class="function-info">
+                <h3>Function 2: createAddQuoteForm()</h3>
+                <p><strong>Purpose:</strong> Create and display a dynamic form for adding new quotes using pure DOM manipulation</p>
+                <p><strong>Features:</strong> Creates form elements dynamically, handles validation, adds quotes to array, includes modal backdrop</p>
+                <button class="test-button" onclick="createAddQuoteForm()">Test createAddQuoteForm()</button>
+            </div>
+        </div>
+
+        <!-- Include the original HTML structure for the functions to work -->
+        <div class="main-content">
+            <section class="category-section">
+                <h2>Select a Category</h2>
+                <div class="category-container" id="categoryContainer">
+                    <!-- Categories will be dynamically generated here -->
+                </div>
+                <button class="btn btn-secondary" id="addCategoryBtn">Add New Category</button>
+            </section>
+
+            <section class="quote-section">
+                <div class="quote-display" id="quoteDisplay">
+                    <blockquote class="quote-text" id="quoteText">
+                        Click "Test showRandomQuote()" to see a random quote!
+                    </blockquote>
+                    <cite class="quote-author" id="quoteAuthor"></cite>
+                </div>
+                <div class="quote-controls">
+                    <button class="btn btn-primary" id="generateQuoteBtn">Generate New Quote</button>
+                    <button class="btn btn-secondary" id="addQuoteBtn">Add New Quote</button>
+                </div>
+            </section>
+
+            <section class="search-section">
+                <h3>Search Quotes</h3>
+                <div class="search-container">
+                    <input type="text" id="searchInput" placeholder="Search quotes by text or author..." class="search-input">
+                    <button class="btn btn-primary" id="searchBtn">Search</button>
+                    <button class="btn btn-secondary" id="clearSearchBtn">Clear</button>
+                </div>
+                <div class="search-results" id="searchResults">
+                    <!-- Search results will be displayed here -->
+                </div>
+            </section>
+        </div>
+
+        <!-- Modal for Adding New Category -->
+        <div class="modal" id="categoryModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Add New Category</h3>
+                    <span class="close" id="closeCategoryModal">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <form id="categoryForm">
+                        <div class="form-group">
+                            <label for="categoryName">Category Name:</label>
+                            <input type="text" id="categoryName" name="categoryName" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="categoryDescription">Description (optional):</label>
+                            <textarea id="categoryDescription" name="categoryDescription" rows="3"></textarea>
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary">Add Category</button>
+                            <button type="button" class="btn btn-secondary" id="cancelCategoryBtn">Cancel</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal for Adding New Quote -->
+        <div class="modal" id="quoteModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Add New Quote</h3>
+                    <span class="close" id="closeQuoteModal">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <form id="quoteForm">
+                        <div class="form-group">
+                            <label for="quoteTextInput">Quote Text:</label>
+                            <textarea id="quoteTextInput" name="quoteText" rows="4" required></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="quoteAuthorInput">Author:</label>
+                            <input type="text" id="quoteAuthorInput" name="quoteAuthor" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="quoteCategorySelect">Category:</label>
+                            <select id="quoteCategorySelect" name="quoteCategory" required>
+                                <!-- Options will be dynamically populated -->
+                            </select>
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary">Add Quote</button>
+                            <button type="button" class="btn btn-secondary" id="cancelQuoteBtn">Cancel</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistics Section -->
+        <section class="stats-section">
+            <h3>Statistics</h3>
+            <div class="stats-container" id="statsContainer">
+                <div class="stat-item">
+                    <span class="stat-number" id="totalQuotes">0</span>
+                    <span class="stat-label">Total Quotes</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number" id="totalCategories">0</span>
+                    <span class="stat-label">Categories</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number" id="quotesViewed">0</span>
+                    <span class="stat-label">Quotes Viewed</span>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Loading Spinner -->
+    <div class="loading-spinner" id="loadingSpinner">
+        <div class="spinner"></div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div class="toast-container" id="toastContainer">
+        <!-- Toast messages will be dynamically added here -->
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
